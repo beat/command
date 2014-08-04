@@ -10,12 +10,12 @@ use GuzzleHttp\Event\SubscriberInterface;
 class ResultMock implements SubscriberInterface, \Countable
 {
     /** @var array Array of mock results and exceptions */
-    private $queue = [];
+    private $queue = array();
 
     /**
      * @param array $results Array of results and exceptions to queue
      */
-    public function __construct(array $results = [])
+    public function __construct(array $results = array())
     {
         $this->addMultiple($results);
     }
@@ -24,7 +24,7 @@ class ResultMock implements SubscriberInterface, \Countable
     {
         // Fire the event during command preparation, so request or response
         // ever needs to be created.
-        return ['prepare' => ['onPrepare', 'first']];
+        return array('prepare' => array('onPrepare', 'first'));
     }
 
     /**
@@ -102,7 +102,7 @@ class ResultMock implements SubscriberInterface, \Countable
      */
     public function clearQueue()
     {
-        $this->queue = [];
+        $this->queue = array();
 
         return $this;
     }

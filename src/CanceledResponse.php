@@ -33,12 +33,12 @@ class CanceledResponse implements ResponseInterface
 
     public function getHeaders()
     {
-        return [];
+        return array();
     }
 
     public function getHeader($header, $asArray = false)
     {
-        return $asArray ? [] : '';
+        return $asArray ? array() : '';
     }
 
     public function hasHeader($header)
@@ -96,12 +96,12 @@ class CanceledResponse implements ResponseInterface
         throw new \RuntimeException(self::MESSAGE);
     }
 
-    public function json(array $config = [])
+    public function json(array $config = array())
     {
         throw new \RuntimeException(self::MESSAGE);
     }
 
-    public function xml(array $config = [])
+    public function xml(array $config = array())
     {
         throw new \RuntimeException(self::MESSAGE);
     }

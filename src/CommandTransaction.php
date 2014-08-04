@@ -40,7 +40,7 @@ class CommandTransaction
     public function __construct(
         ServiceClientInterface $client,
         CommandInterface $command,
-        array $context = []
+        array $context = array()
     ) {
         $this->client = $client;
         $this->command = $command;

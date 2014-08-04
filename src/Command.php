@@ -1,9 +1,8 @@
 <?php
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Event\Emitter;
 use GuzzleHttp\Event\EmitterInterface;
-use GuzzleHttp\HasDataTrait;
-use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Command\Event\CommandEvents;
 
 /**
@@ -11,7 +10,86 @@ use GuzzleHttp\Command\Event\CommandEvents;
  */
 class Command implements CommandInterface
 {
-    use HasDataTrait, HasEmitterTrait;
+    //BB use HasDataTrait;
+	/** @var array */
+	protected $data = array();
+
+	public function getIterator()
+	{
+		return new \ArrayIterator($this->data);
+	}
+
+	public function offsetGet($offset)
+	{
+		return isset($this->data[$offset]) ? $this->data[$offset] : null;
+	}
+
+	public function offsetSet($offset, $value)
+	{
+		$this->data[$offset] = $value;
+	}
+
+	public function offsetExists($offset)
+	{
+		return isset($this->data[$offset]);
+	}
+
+	public function offsetUnset($offset)
+	{
+		unset($this->data[$offset]);
+	}
+
+	public function toArray()
+	{
+		return $this->data;
+	}
+
+	public function count()
+	{
+		return count($this->data);
+	}
+
+	/**
+	 * Get a value from the collection using a path syntax to retrieve nested
+	 * data.
+	 *
+	 * @param string $path Path to traverse and retrieve a value from
+	 *
+	 * @return mixed|null
+	 */
+	public function getPath($path)
+	{
+		return \GuzzleHttp\get_path($this->data, $path);
+	}
+
+	/**
+	 * Set a value into a nested array key. Keys will be created as needed to
+	 * set the value.
+	 *
+	 * @param string $path  Path to set
+	 * @param mixed  $value Value to set at the key
+	 *
+	 * @throws \RuntimeException when trying to setPath using a nested path
+	 *     that travels through a scalar value
+	 */
+	public function setPath($path, $value)
+	{
+		\GuzzleHttp\set_path($this->data, $path, $value);
+	}
+	//BB end HasDataTrait;
+    //BB use HasEmitterTrait;
+	/** @var EmitterInterface */
+	private $emitter;
+
+	public function getEmitter()
+	{
+		if (!$this->emitter) {
+			$this->emitter = new Emitter();
+		}
+
+		return $this->emitter;
+	}
+    //BB end HasEmitterTrait;
 
     /** @var string */
     private $name;
@@ -23,7 +101,7 @@ class Command implements CommandInterface
      */
     public function __construct(
         $name,
-        array $args = [],
+        array $args = array(),
         EmitterInterface $emitter = null
     ) {
         $this->name = $name;

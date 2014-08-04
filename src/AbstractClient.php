@@ -4,8 +4,8 @@ namespace GuzzleHttp\Command;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Event\ErrorEvent;
-use GuzzleHttp\Event\HasEmitterTrait;
+use GuzzleHttp\Event\Emitter;
+use GuzzleHttp\Event\EmitterInterface;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
@@ -19,7 +19,19 @@ use GuzzleHttp\Exception\RequestException;
  */
 abstract class AbstractClient implements ServiceClientInterface
 {
-    use HasEmitterTrait;
+    //BB use HasEmitterTrait;
+	/** @var EmitterInterface */
+	private $emitter;
+
+	public function getEmitter()
+	{
+		if (!$this->emitter) {
+			$this->emitter = new Emitter();
+		}
+
+		return $this->emitter;
+	}
+    //BB end of HasEmitterTrait;
 
     /** @var ClientInterface HTTP client used to send requests */
     private $client;
@@ -43,12 +55,12 @@ abstract class AbstractClient implements ServiceClientInterface
      */
     public function __construct(
         ClientInterface $client,
-        array $config = []
+        array $config = array()
     ) {
         $this->client = $client;
         // Ensure the defaults key is an array so we can easily merge later.
         if (!isset($config['defaults'])) {
-            $config['defaults'] = [];
+            $config['defaults'] = array();
         }
 
         if (isset($config['emitter'])) {
@@ -61,7 +73,7 @@ abstract class AbstractClient implements ServiceClientInterface
     public function __call($name, array $arguments)
     {
         return $this->execute(
-            $this->getCommand($name, isset($arguments[0]) ? $arguments[0] : [])
+            $this->getCommand($name, isset($arguments[0]) ? $arguments[0] : array())
         );
     }
 
@@ -81,9 +93,9 @@ abstract class AbstractClient implements ServiceClientInterface
         return $t->getResult();
     }
 
-    public function executeAll($commands, array $options = [])
+    public function executeAll($commands, array $options = array())
     {
-        $requestOptions = [];
+        $requestOptions = array();
 
         // Move all of the options over that affect the request transfer
         if (isset($options['parallel'])) {
@@ -101,7 +113,7 @@ abstract class AbstractClient implements ServiceClientInterface
         );
     }
 
-    public function batch($commands, array $options = [])
+    public function batch($commands, array $options = array())
     {
         $hash = new \SplObjectStorage();
         foreach ($commands as $command) {
@@ -110,24 +122,26 @@ abstract class AbstractClient implements ServiceClientInterface
 
         $options = RequestEvents::convertEventArray(
             $options,
-            ['process', 'error'],
-            [
+			array('process', 'error'),
+			array(
                 'priority' => RequestEvents::EARLY,
                 'once'     => true,
                 'fn'       => function ($e) use ($hash) {
-                    $hash[$e->getCommand()] = $e;
+						/** @noinspection PhpUndefinedMethodInspection */
+						$hash[$e->getCommand()] = $e;
                 }
-            ]
+			)
         );
 
         $this->executeAll($commands, $options);
 
         // Update the received value for any of the intercepted commands.
         foreach ($hash as $request) {
+			/** @var ProcessEvent[] $hash */
             if ($hash[$request] instanceof ProcessEvent) {
                 $hash[$request] = $hash[$request]->getResult();
             } elseif ($hash[$request] instanceof CommandErrorEvent) {
-                $trans = $hash[$request]->getTransaction();
+				$trans = $hash[$request]->getTransaction();
                 $hash[$request] = new CommandException(
                     'Error executing command',
                     $trans,
@@ -187,11 +201,11 @@ abstract class AbstractClient implements ServiceClientInterface
     private function preventCommandExceptions(array $options)
     {
         // Prevent CommandExceptions from being thrown
-        return RequestEvents::convertEventArray($options, ['error'], [
+        return RequestEvents::convertEventArray($options, array('error'), array(
             'priority' => RequestEvents::LATE,
             'fn' => function (CommandErrorEvent $e) {
                 $e->stopPropagation();
             }
-        ]);
+		));
     }
 }

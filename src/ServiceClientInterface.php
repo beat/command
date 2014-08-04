@@ -34,7 +34,7 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @return CommandInterface
      * @throws \InvalidArgumentException if no command can be found by name
      */
-    public function getCommand($name, array $args = []);
+    public function getCommand($name, array $args = array());
 
     /**
      * Execute a single command.
@@ -60,7 +60,7 @@ interface ServiceClientInterface extends HasEmitterInterface
      *     - error: (callable) Receives a CommandErrorEvent. Concrete
      *       implementations MAY choose to implement this setting.
      */
-    public function executeAll($commands, array $options = []);
+    public function executeAll($commands, array $options = array());
 
     /**
      * Sends multiple commands in parallel and returns a hash map of commands
@@ -81,7 +81,7 @@ interface ServiceClientInterface extends HasEmitterInterface
      *     occurs while executing the command.
      * @throws \InvalidArgumentException if the event format is incorrect.
      */
-    public function batch($commands, array $options = []);
+    public function batch($commands, array $options = array());
 
     /**
      * Get the HTTP client used to send requests for the web service client

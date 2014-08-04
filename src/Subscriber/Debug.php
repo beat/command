@@ -41,7 +41,7 @@ class Debug implements SubscriberInterface
      *
      * @param array $options Hash of debug options
      */
-    public function __construct(array $options = [])
+    public function __construct(array $options = array())
     {
         $this->states = new \SplObjectStorage();
         $this->output = isset($options['output'])
@@ -58,20 +58,20 @@ class Debug implements SubscriberInterface
 
     public function getEvents()
     {
-        return [
-            'prepare' => [
-                ['beforePrepare', 'first'],
-                ['afterPrepare', 'last']
-            ],
-            'process' => [
-                ['beforeProcess', 'first'],
-                ['afterProcess', 'last']
-            ],
-            'error' => [
-                ['beforeError', 'first'],
-                ['afterError', 'last']
-            ]
-        ];
+        return array(
+            'prepare' => array(
+				array('beforePrepare', 'first'),
+                array('afterPrepare', 'last')
+			),
+            'process' => array(
+				array('beforeProcess', 'first'),
+                array('afterProcess', 'last')
+			),
+            'error' => array(
+				array('beforeError', 'first'),
+                array('afterError', 'last')
+			)
+		);
     }
 
     private function write($text)
@@ -88,7 +88,8 @@ class Debug implements SubscriberInterface
             . ' (' . spl_object_hash($event) . ')';
     }
 
-    private function startEvent(
+	/** @noinspection PhpUnusedPrivateMethodInspection */
+	private function startEvent(
         $name,
         $hash,
         $command,
@@ -109,7 +110,8 @@ class Debug implements SubscriberInterface
         ));
     }
 
-    private function endEvent(
+	/** @noinspection PhpUnusedPrivateMethodInspection */
+	private function endEvent(
         $name,
         $hash,
         $command,
@@ -151,16 +153,18 @@ class Debug implements SubscriberInterface
             $request->getConfig()->set('debug', true);
         }
 
+		$that = $this;
+
         // Attach listeners to request events
-        $before = function ($before) use ($e) {
-            $this->proxyReqEvent('startEvent', $e, $before);
+        $before = function ($before) use ($e, $that) {
+			$that->proxyReqEvent('startEvent', $e, $before);
         };
 
-        $after = function ($after) use ($e) {
-            $this->proxyReqEvent('endEvent', $e, $after);
+        $after = function ($after) use ($e, $that) {
+			$that->proxyReqEvent('endEvent', $e, $after);
         };
 
-        foreach (['before', 'complete', 'error'] as $event) {
+        foreach (array('before', 'complete', 'error') as $event) {
             $request->getEmitter()->on($event, $before, RequestEvents::EARLY);
             $request->getEmitter()->on($event, $after, RequestEvents::LATE);
         }
@@ -194,20 +198,22 @@ class Debug implements SubscriberInterface
      */
     public function proxyEvent($name, EventInterface $e)
     {
-        $meth = substr(debug_backtrace()[1]['function'], 0, 6) == 'before'
+		$backtrace = debug_backtrace();
+        $meth = substr($backtrace[1]['function'], 0, 6) == 'before'
             ? 'startEvent' : 'endEvent';
 
-        $args = [
+		/** @var \GuzzleHttp\Command\Event\AbstractCommandEvent $e */
+        $args = array(
             $name,
             $this->hashCommand($e->getClient(), $e->getCommand(), $e),
             $e->getCommand(),
             $e->getRequest()
-        ];
+		);
 
         $args[] = method_exists($e, 'getResponse') ? $e->getResponse() : null;
         $args[] = method_exists($e, 'getResult') ? $e->getResult() : null;
         $args[] = method_exists($e, 'getException') ? $e->getException() : null;
-        call_user_func_array([$this, $meth], $args);
+        call_user_func_array(array($this, $meth), $args);
     }
 
     /**
@@ -222,8 +228,10 @@ class Debug implements SubscriberInterface
         EventInterface $cev,
         EventInterface $rev
     ) {
-        call_user_func(
-            [$this, $meth],
+		/** @var \GuzzleHttp\Command\Event\AbstractCommandEvent $cev */
+		/** @noinspection PhpUndefinedMethodInspection */
+		call_user_func(
+			array($this, $meth),
             $this->getEventName($rev),
             $this->hashCommand($cev->getClient(), $cev->getCommand(), $rev),
             $cev->getCommand(),
@@ -243,14 +251,14 @@ class Debug implements SubscriberInterface
      */
     private function eventState($args)
     {
-        return [
+        return array(
             'time'     => microtime(true),
             'command'  => $this->toArrayState($args[2]),
             'request'  => $this->messageState($args[3]),
             'response' => $this->messageState($args[4]),
             'result'   => $this->resultState($args[5]),
             'error'    => $this->errorState($args[6])
-        ];
+		);
     }
 
     /**
@@ -283,11 +291,11 @@ class Debug implements SubscriberInterface
             return null;
         }
 
-        $result = [
+        $result = array(
             'class' => get_class($stream),
             'size'  => $stream->getSize(),
             'tell'  => $stream->tell()
-        ];
+		);
 
         if ($stream->getSize() < $this->maxStreamSize &&
             $stream->isSeekable()
@@ -310,11 +318,11 @@ class Debug implements SubscriberInterface
     private function messageState(MessageInterface $msg = null)
     {
         return $msg
-            ? [
+            ? array(
                 'start-line' => AbstractMessage::getStartLine($msg),
                 'headers'    => $msg->getHeaders(),
                 'body'       => $this->streamState($msg->getBody())
-            ] : null;
+			) : null;
     }
 
     /**
@@ -328,17 +336,18 @@ class Debug implements SubscriberInterface
     private function toArrayState(ToArrayInterface $data)
     {
         $params = $data->toArray();
-        array_walk_recursive($params, function (&$value) {
+		$that = $this;
+        array_walk_recursive($params, function (&$value) use ($that) {
             if ($value instanceof StreamInterface) {
-                $value = $this->streamState($value);
+                $value = $that->streamState($value);
             }
         });
 
-        $result = [
+        $result = array(
             'id'    => spl_object_hash($data),
             'class' => get_class($data),
             'keys'  => $params
-        ];
+		);
 
         if ($data instanceof CommandInterface) {
             $result['name'] = $data->getName();
@@ -376,13 +385,13 @@ class Debug implements SubscriberInterface
      */
     private function errorState(\Exception $e = null)
     {
-        return $e ? [
+        return $e ? array(
             'class'   => get_class($e),
             'message' => $e->getMessage(),
             'line'    => $e->getLine(),
             'file'    => $e->getFile(),
             'code'    => $e->getCode()
-        ] : null;
+		) : null;
     }
 
     /**
@@ -402,7 +411,7 @@ class Debug implements SubscriberInterface
 
     private function diff($a, $b) {
 
-        $result = [];
+        $result = array();
 
         // Check differences in previous keys
         foreach ($a as $k => $v) {

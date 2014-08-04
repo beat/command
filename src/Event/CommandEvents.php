@@ -104,7 +104,7 @@ class CommandEvents
             'error',
             function (ErrorEvent $re) use ($trans) {
                 $re->stopPropagation();
-                $trans->setException(self::exceptionFromError($trans, $re));
+                $trans->setException(CommandEvents::exceptionFromError($trans, $re));
                 $cev = new CommandErrorEvent($trans);
                 $trans->getCommand()->getEmitter()->emit('error', $cev);
 
@@ -146,7 +146,10 @@ class CommandEvents
      */
     private static function stopRequestError(ErrorEvent $e)
     {
-        $fn = function ($ev) { $ev->stopPropagation(); };
+        $fn = function ($ev) {
+			/** @noinspection PhpUndefinedMethodInspection */
+			$ev->stopPropagation();
+		};
         $e->getRequest()->getEmitter()->once('complete', $fn, 'first');
         $e->intercept(new CanceledResponse());
     }
