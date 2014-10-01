@@ -207,8 +207,8 @@ class Debug implements SubscriberInterface
             ? 'startEvent' : 'endEvent';
 
         call_user_func_array(
-            [$this, $meth],
-            [
+            array($this, $meth),
+            array(
                 $name,
                 $this->hashCommand($e->getClient(), $e->getCommand(), $e),
                 $e->getCommand(),
@@ -216,7 +216,7 @@ class Debug implements SubscriberInterface
                 method_exists($e, 'getResponse') ? $e->getResponse() : null,
                 method_exists($e, 'getResult') ? $e->getResult() : null,
                 method_exists($e, 'getException') ? $e->getException() : null
-            ]
+			)
         );
     }
 
